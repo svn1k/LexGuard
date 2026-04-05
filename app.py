@@ -313,8 +313,10 @@ def post_fork(server, worker):
     threading.Thread(target=_ping, daemon=True).start()
 
 
+# Инициализация при загрузке модуля (работает с gunicorn)
+threading.Thread(target=_init_og, daemon=True).start()
+threading.Thread(target=_ping, daemon=True).start()
+
 if __name__ == "__main__":
-    threading.Thread(target=_init_og, daemon=True).start()
-    threading.Thread(target=_ping, daemon=True).start()
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)
