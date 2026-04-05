@@ -161,7 +161,7 @@ def _parse_json(raw):
 
 def call_llm(messages, retries=2):
     global WORKING_MODEL
-
+    print(f"DEBUG call_llm: _ready={_ready}, OG_OK={OG_OK}, llm_client={llm_client is not None}, WORKING_MODEL={WORKING_MODEL}")
     # Ждём инициализации OG (макс 120 сек)
     deadline = time.time() + 120
     while not _ready and time.time() < deadline:
