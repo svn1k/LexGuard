@@ -71,7 +71,7 @@ def _init_og():
         llm_client = og.LLM(private_key=private_key)
 
         try:
-            approval = llm_client.ensure_opg_approval(min_allowance=0.5)
+            approval = llm_client.ensure_opg_approval(min_allowance=0.1)
             print(f"OPG approval: {approval}")
         except Exception as e:
             print(f"Approval warning (continuing): {e}")
