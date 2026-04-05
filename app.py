@@ -31,7 +31,7 @@ def _start_loop():
 
 threading.Thread(target=_start_loop, daemon=True).start()
 
-def _run(coro, timeout=60):
+def _run(coro, timeout=240):
     deadline = time.time() + 10
     while _loop is None and time.time() < deadline:
         time.sleep(0.1)
@@ -181,7 +181,7 @@ def call_llm(messages, retries=2):
                 messages=messages,
                 max_tokens=3000,
                 temperature=0.3,
-            ), timeout=80)
+            ), timeout=240)
             raw = extract_raw(result)
             print(f"Raw (200): {repr(raw[:200])}")
             if not raw.strip():

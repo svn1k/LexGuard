@@ -4,3 +4,4 @@ python-dotenv>=1.0.0
 opengradient
 urllib3
 gunicorn>=21.0.0
+gevent>=23.0.0
