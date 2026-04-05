@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LexGuard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0612;
+  --bg2:#110820;
+  --card:rgba(16,8,32,0.9);
+  --border:rgba(180,80,255,0.1);
+  --border2:rgba(180,80,255,0.2);
+  --text:#f0e8ff;
+  --text2:#9070b8;
+  --text3:#3d2060;
+  --acc:#b450ff;
+  --acc2:#8c30d4;
+  --rose:#ff4da6;
+  --glow:rgba(180,80,255,0.14);
+  --pale:rgba(180,80,255,0.06);
+  --danger:#ff3a5c;
+  --danger-bg:rgba(255,58,92,0.07);
+  --warn:#ffaa00;
+  --warn-bg:rgba(255,170,0,0.07);
+  --ok:#00ddaa;
+  --ok-bg:rgba(0,221,170,0.07);
+  --shadow:0 2px 12px rgba(0,0,0,0.5),0 0 0 1px rgba(180,80,255,0.06);
+  --shadow2:0 4px 32px rgba(0,0,0,0.6),0 0 0 1px rgba(180,80,255,0.12);
+}
+html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text)}
+canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+.vp{position:fixed;inset:0;z-index:1;display:flex;transition:transform .65s cubic-bezier(.86,0,.07,1)}
+.vp.s0{transform:translateX(0)}
+.vp.s1{transform:translateX(-100%)}
+.vp.s2{transform:translateX(-200%)}
+.panel{width:100vw;height:100vh;flex-shrink:0;display:flex;position:relative;overflow:hidden}
+
+.p0{align-items:stretch}
+.p0-left{width:52%;display:flex;flex-direction:column;justify-content:center;padding:4rem 4rem 4rem 5rem;position:relative}
+.p0-left::after{content:'';position:absolute;right:0;top:8%;bottom:8%;width:1px;background:linear-gradient(to bottom,transparent,var(--border2),transparent)}
+.p0-tag{font-family:'Space Mono',monospace;font-size:.58rem;color:var(--text3);letter-spacing:.22em;text-transform:uppercase;margin-bottom:3rem;opacity:0;animation:fadeUp .6s .1s ease forwards}
+.p0-title{font-size:clamp(2.8rem,5vw,4.5rem);font-weight:700;line-height:1.0;letter-spacing:-.04em;margin-bottom:1.5rem;opacity:0;animation:fadeUp .7s .25s ease forwards}
+.p0-title .ln1{display:block;color:var(--text)}
+.p0-title .ln2{display:block;background:linear-gradient(90deg,var(--acc),var(--rose),var(--acc),var(--rose),var(--acc));background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 4s linear infinite}
+@keyframes shimmer{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.p0-desc{font-size:.88rem;color:var(--text2);line-height:1.8;max-width:400px;margin-bottom:3rem;font-weight:300;opacity:0;animation:fadeUp .7s .4s ease forwards}
+.p0-start{display:flex;align-items:center;gap:1.5rem;opacity:0;animation:fadeUp .7s .55s ease forwards}
+.btn-start{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--acc2),var(--acc));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;animation:ripple 2.8s ease-out infinite;transition:transform .2s;flex-shrink:0}
+.btn-start:hover{transform:scale(1.1)}
+@keyframes ripple{0%{box-shadow:0 0 0 0 rgba(180,80,255,.5)}70%{box-shadow:0 0 0 22px rgba(180,80,255,0)}100%{box-shadow:0 0 0 0 rgba(180,80,255,0)}}
+.btn-start-label{font-size:.78rem;color:var(--text2);line-height:1.45}
+.btn-start-label strong{display:block;color:var(--text);font-size:.9rem}
+.p0-chain{position:absolute;bottom:2.5rem;left:5rem;display:flex;align-items:center;gap:.625rem;font-family:'Space Mono',monospace;font-size:.56rem;color:var(--text3);letter-spacing:.06em;opacity:0;animation:fadeUp .6s .7s ease forwards}
+.chain-pulse{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:cpulse 2s infinite}
+@keyframes cpulse{0%,100%{opacity:1}50%{opacity:.2}}
+.p0-right{width:48%;display:flex;align-items:center;justify-content:center;padding:3rem}
+
+.prev-card{width:100%;max-width:340px;background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:1.75rem;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 40px rgba(180,80,255,.06),0 0 0 1px rgba(180,80,255,.08);opacity:0;animation:fadeUp .8s .3s ease forwards, floatCard 7s .8s ease-in-out infinite}
+@keyframes floatCard{0%,100%{transform:translateY(0) rotate(0deg)}20%{transform:translateY(-14px) rotate(.5deg)}50%{transform:translateY(-7px) rotate(-.35deg)}80%{transform:translateY(-18px) rotate(.25deg)}}
+.pc-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.pc-dots{display:flex;gap:5px}
+.pc-dot{width:8px;height:8px;border-radius:50%}
+.pc-dot.r{background:var(--danger)}.pc-dot.y{background:var(--warn)}.pc-dot.g{background:var(--ok)}
+.pc-label{font-family:'Space Mono',monospace;font-size:.56rem;color:var(--text3);letter-spacing:.07em}
+.pc-score-ring{display:flex;align-items:center;gap:1.25rem;margin-bottom:1.25rem}
+.ring-wrap{position:relative;width:72px;height:72px;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.05);stroke-width:5}
+.ring-fill{fill:none;stroke:url(#rg);stroke-width:5;stroke-linecap:round;stroke-dasharray:188;stroke-dashoffset:72}
+.ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--warn)}
+.pc-score-doc{font-size:.78rem;font-weight:600;margin-bottom:.2rem}
+.pc-score-sub{font-size:.62rem;color:var(--text3);font-family:'Space Mono',monospace}
+.pc-items{display:flex;flex-direction:column;gap:.4rem}
+.pc-item{display:flex;align-items:center;gap:.6rem;padding:.45rem .75rem;border-radius:8px;font-size:.7rem;color:var(--text2);border:1px solid transparent}
+.pc-item.h{background:var(--danger-bg);border-color:rgba(255,58,92,.12)}
+.pc-item.m{background:var(--warn-bg);border-color:rgba(255,170,0,.12)}
+.pc-item.l{background:var(--ok-bg);border-color:rgba(0,221,170,.12)}
+.pcd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.pc-item.h .pcd{background:var(--danger)}.pc-item.m .pcd{background:var(--warn)}.pc-item.l .pcd{background:var(--ok)}
+.pc-footer{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:.5rem;font-family:'Space Mono',monospace;font-size:.56rem;color:var(--acc);letter-spacing:.05em}
+
+.p1{flex-direction:column}
+.p1-nav{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;padding:0 3rem;gap:2rem;border-bottom:1px solid var(--border);background:rgba(10,6,18,.82);backdrop-filter:blur(14px);z-index:2}
+.p1-back{background:none;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:.65rem;color:var(--text2);letter-spacing:.08em;display:flex;align-items:center;gap:.5rem;transition:color .15s;padding:0}
+.p1-back:hover{color:var(--acc)}
+.p1-nav-title{font-size:.75rem;font-weight:600;color:var(--text3)}
+.p1-body{flex:1;margin-top:56px;display:grid;grid-template-columns:1fr 1fr;height:calc(100% - 56px)}
+.p1-col{display:flex;flex-direction:column;justify-content:center;padding:3rem 3.5rem}
+.p1-col:first-child{border-right:1px solid var(--border)}
+.col-label{font-family:'Space Mono',monospace;font-size:.56rem;color:var(--text3);letter-spacing:.16em;text-transform:uppercase;margin-bottom:1.5rem;display:flex;align-items:center;gap:.5rem}
+.col-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-bottom:2rem}
+.type-btn{padding:1rem;border:1px solid var(--border);border-radius:12px;background:rgba(0,0,0,.2);cursor:pointer;text-align:left;transition:all .18s;font-family:'Space Grotesk',sans-serif}
+.type-btn:hover{border-color:var(--border2);background:var(--pale)}
+.type-btn.on{border-color:var(--acc);background:var(--pale);box-shadow:0 0 12px rgba(180,80,255,.1)}
+.type-icon{font-size:1.2rem;margin-bottom:.4rem;display:block}
+.type-name{font-size:.8rem;font-weight:600;color:var(--text);display:block}
+.type-desc{font-size:.65rem;color:var(--text3);margin-top:.2rem;display:block}
+.drop-area{border:1px dashed var(--border2);border-radius:14px;padding:2.5rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;display:none;background:rgba(180,80,255,.02);margin-bottom:1.25rem}
+.drop-area.vis{display:block}
+.drop-area:hover,.drop-area.over{border-color:var(--acc);background:var(--pale)}
+.drop-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-big{font-size:2rem;display:block;margin-bottom:.625rem}
+.drop-t{font-size:.82rem;font-weight:500;margin-bottom:.3rem}
+.drop-s{font-size:.65rem;color:var(--text3);font-family:'Space Mono',monospace}
+.ta-wrap{position:relative;display:none;margin-bottom:1.25rem}
+.ta-wrap.vis{display:block}
+textarea{width:100%;height:190px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'Space Mono',monospace;font-size:.68rem;padding:1rem;outline:none;resize:none;line-height:1.75;transition:border-color .2s}
+textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(180,80,255,.08)}
+textarea::placeholder{color:var(--text3)}
+.input-toggle{display:flex;background:rgba(0,0,0,.25);border-radius:8px;border:1px solid var(--border);overflow:hidden;margin-bottom:1rem}
+.itog{flex:1;padding:7px;border:none;background:none;font-family:'Space Grotesk',sans-serif;font-size:.75rem;color:var(--text3);cursor:pointer;transition:all .15s}
+.itog.on{background:var(--pale);color:var(--acc);border-bottom:2px solid var(--acc)}
+.file-tag{display:none;align-items:center;gap:.625rem;padding:.625rem 1rem;background:var(--pale);border:1px solid var(--border2);border-radius:8px;margin-bottom:1rem}
+.file-tag.vis{display:flex}
+.file-tag-name{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--acc);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-tag-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:.7rem;transition:color .12s}
+.file-tag-rm:hover{color:var(--danger)}
+.btn-analyze{width:100%;padding:15px;border-radius:12px;background:linear-gradient(135deg,var(--acc2),var(--acc));color:#fff;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:.9rem;font-weight:700;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 24px rgba(180,80,255,.3)}
+.btn-analyze:hover{box-shadow:0 0 40px rgba(180,80,255,.5);transform:translateY(-1px)}
+.btn-analyze:disabled{opacity:.3;cursor:not-allowed;box-shadow:none;transform:none}
+
+.p2{flex-direction:column}
+.p2-nav{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;padding:0 3rem;gap:2rem;border-bottom:1px solid var(--border);background:rgba(10,6,18,.82);backdrop-filter:blur(14px);z-index:2}
+.p2-score-pill{margin-left:auto;display:flex;align-items:center;gap:.75rem;padding:6px 16px;border:1px solid var(--border2);border-radius:100px;background:var(--pale)}
+.p2-score-lbl{font-family:'Space Mono',monospace;font-size:.56rem;color:var(--text3);letter-spacing:.08em}
+.p2-score-val{font-family:'Space Mono',monospace;font-size:1rem;font-weight:700}
+.p2-body{flex:1;margin-top:56px;height:calc(100% - 56px);display:grid;grid-template-columns:300px 1fr;position:relative}
+.p2-sidebar{border-right:1px solid var(--border);overflow-y:auto;padding:1.5rem}
+.p2-sidebar::-webkit-scrollbar{width:2px}
+.p2-sidebar::-webkit-scrollbar-thumb{background:var(--border2)}
+.sidebar-label{font-family:'Space Mono',monospace;font-size:.54rem;color:var(--text3);letter-spacing:.16em;text-transform:uppercase;margin-bottom:.875rem}
+.risk-list{display:flex;flex-direction:column;gap:.35rem;margin-bottom:1.5rem}
+.rl-item{padding:.6rem .875rem;border-radius:10px;cursor:pointer;border:1px solid transparent;transition:all .15s;display:flex;align-items:center;gap:.625rem}
+.rl-item:hover{background:rgba(255,255,255,.02)}
+.rl-item.active{background:var(--pale);border-color:var(--border2)}
+.rl-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.rl-item.h .rl-dot{background:var(--danger)}.rl-item.m .rl-dot{background:var(--warn)}.rl-item.l .rl-dot{background:var(--ok)}
+.rl-title{font-size:.73rem;color:var(--text2);flex:1;line-height:1.3}
+.rl-item.active .rl-title{color:var(--text)}
+.rl-badge{font-family:'Space Mono',monospace;font-size:.5rem;padding:2px 7px;border-radius:4px;flex-shrink:0;font-weight:700}
+.rl-item.h .rl-badge{background:var(--danger-bg);color:var(--danger)}
+.rl-item.m .rl-badge{background:var(--warn-bg);color:var(--warn)}
+.rl-item.l .rl-badge{background:var(--ok-bg);color:var(--ok)}
+.p2-main{overflow-y:auto;padding:2rem 2.5rem}
+.p2-main::-webkit-scrollbar{width:2px}
+.p2-main::-webkit-scrollbar-thumb{background:var(--border2)}
+.res-summary-block{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;opacity:0;transform:translateY(8px);transition:all .4s ease}
+.res-summary-block.in{opacity:1;transform:translateY(0)}
+.rsb-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem}
+.rsb-title{font-size:1.05rem;font-weight:700;letter-spacing:-.02em}
+.rsb-meta{font-family:'Space Mono',monospace;font-size:.58rem;color:var(--text3);margin-top:.3rem}
+.rsb-stats{display:flex;gap:.625rem}
+.rsb-stat{padding:.5rem .875rem;border-radius:8px;text-align:center;border:1px solid transparent}
+.rsb-stat.h{background:var(--danger-bg);border-color:rgba(255,58,92,.15)}
+.rsb-stat.m{background:var(--warn-bg);border-color:rgba(255,170,0,.15)}
+.rsb-stat.l{background:var(--ok-bg);border-color:rgba(0,221,170,.15)}
+.rsb-stat-n{font-family:'Space Mono',monospace;font-size:1.2rem;font-weight:700;line-height:1}
+.rsb-stat.h .rsb-stat-n{color:var(--danger)}.rsb-stat.m .rsb-stat-n{color:var(--warn)}.rsb-stat.l .rsb-stat-n{color:var(--ok)}
+.rsb-stat-l{font-size:.58rem;color:var(--text3);margin-top:.2rem}
+.rsb-text{font-size:.82rem;color:var(--text2);line-height:1.75}
+.proof-link{display:inline-flex;align-items:center;gap:5px;margin-top:.875rem;font-family:'Space Mono',monospace;font-size:.56rem;color:var(--acc);text-decoration:none;letter-spacing:.04em;border-bottom:1px solid rgba(180,80,255,.2);padding-bottom:1px;transition:border-color .15s}
+.proof-link:hover{border-color:var(--acc)}
+.detail-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.75rem;opacity:0;transform:translateY(8px);transition:all .4s ease;display:none}
+.detail-panel.vis{display:block}
+.detail-panel.in{opacity:1;transform:translateY(0)}
+.dp-badge{display:inline-flex;align-items:center;gap:.5rem;padding:4px 12px;border-radius:6px;font-family:'Space Mono',monospace;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:1rem}
+.dp-badge.high{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(255,58,92,.2)}
+.dp-badge.medium{background:var(--warn-bg);color:var(--warn);border:1px solid rgba(255,170,0,.2)}
+.dp-badge.low{background:var(--ok-bg);color:var(--ok);border:1px solid rgba(0,221,170,.2)}
+.dp-title{font-size:1.1rem;font-weight:700;margin-bottom:.5rem;letter-spacing:-.02em}
+.dp-clause{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--text3);margin-bottom:1.25rem}
+.dp-section{margin-bottom:1.25rem}
+.dp-section-label{font-family:'Space Mono',monospace;font-size:.54rem;color:var(--text3);letter-spacing:.13em;text-transform:uppercase;margin-bottom:.5rem}
+.dp-section-text{font-size:.82rem;color:var(--text2);line-height:1.75}
+.dp-quote{padding:.875rem 1.1rem;background:rgba(0,0,0,.3);border-left:2px solid var(--border2);border-radius:0 8px 8px 0;font-family:'Space Mono',monospace;font-size:.66rem;color:var(--text2);line-height:1.65;font-style:italic;margin-bottom:1.25rem}
+.dp-quote.high{border-left-color:var(--danger)}.dp-quote.medium{border-left-color:var(--warn)}.dp-quote.low{border-left-color:var(--ok)}
+.dp-rec{padding:1rem 1.1rem;background:var(--pale);border:1px solid var(--border2);border-radius:10px;font-size:.8rem;color:var(--acc);line-height:1.65;display:flex;gap:.625rem;align-items:flex-start}
+.detail-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:260px;color:var(--text3);text-align:center;gap:.75rem}
+.detail-empty-icon{font-size:2rem;opacity:.2}
+.detail-empty-text{font-size:.75rem;font-family:'Space Mono',monospace}
+
+.scanning-overlay{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,6,18,.97);z-index:10}
+.scanning-overlay.vis{display:flex}
+.scan-big{font-size:3rem;margin-bottom:1.5rem;animation:sfloat 2s ease-in-out infinite}
+@keyframes sfloat{0%,100%{transform:translateY(0);filter:drop-shadow(0 0 12px rgba(180,80,255,.5))}50%{transform:translateY(-12px);filter:drop-shadow(0 0 28px rgba(180,80,255,.8))}}
+.scan-t{font-size:1.1rem;font-weight:600;margin-bottom:.4rem}
+.scan-s{font-family:'Space Mono',monospace;font-size:.66rem;color:var(--text3);margin-bottom:2rem;letter-spacing:.08em}
+.scan-steps{display:flex;flex-direction:column;gap:.5rem;align-items:flex-start}
+.scan-step{display:flex;align-items:center;gap:.625rem;font-family:'Space Mono',monospace;font-size:.66rem;color:var(--text3);opacity:0;transform:translateX(-8px);transition:all .4s ease}
+.scan-step.in{opacity:1;transform:translateX(0)}
+.ssd{width:5px;height:5px;border-radius:50%;background:var(--border2)}
+.scan-step.in .ssd{background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.error-msg{padding:1.5rem;background:var(--danger-bg);border:1px solid rgba(255,58,92,.2);border-radius:12px;color:var(--danger);font-size:.82rem;text-align:center}
+
+@media(max-width:900px){
+  .p0-left{width:100%;padding:3rem 2rem}
+  .p0-right{display:none}
+  .p1-body{grid-template-columns:1fr}
+  .p1-col:first-child{border-right:none;border-bottom:1px solid var(--border)}
+  .p2-body{grid-template-columns:1fr}
+  .p2-sidebar{display:none}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="vp s0" id="vp">
+
+  <!-- PANEL 0 -->
+  <div class="panel p0">
+    <div class="p0-left">
+      <div class="p0-tag">lexguard / v2.1.0</div>
+      <h1 class="p0-title">
+        <span class="ln1">Contract</span>
+        <span class="ln2">Risk Scanner</span>
+      </h1>
+      <p class="p0-desc">Drop any agreement. The AI reads every clause, flags what's suspicious, and tells you what to negotiate — verified on-chain so results can't be tampered with.</p>
+      <div class="p0-start">
+        <button class="btn-start" onclick="goTo(1)">→</button>
+        <div class="btn-start-label">
+          <strong>Scan a document</strong>
+          Employment · NDA · Lease · Service
+        </div>
+      </div>
+      <div class="p0-chain">
+        <div class="chain-pulse"></div>
+        Powered by OpenGradient TEE
+      </div>
+    </div>
+    <div class="p0-right">
+      <div class="prev-card">
+        <svg width="0" height="0" style="position:absolute">
+          <defs>
+            <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#b450ff"/>
+              <stop offset="100%" stop-color="#ff4da6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="pc-topbar">
+          <div class="pc-dots"><div class="pc-dot r"></div><div class="pc-dot y"></div><div class="pc-dot g"></div></div>
+          <div class="pc-label">SAMPLE RESULT</div>
+        </div>
+        <div class="pc-score-ring">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 72 72" width="72" height="72">
+              <defs>
+                <linearGradient id="rg2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#b450ff"/>
+                  <stop offset="100%" stop-color="#ff4da6"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-bg" cx="36" cy="36" r="30"/>
+              <circle class="ring-fill" cx="36" cy="36" r="30" style="stroke:url(#rg2)"/>
+            </svg>
+            <div class="ring-num">62</div>
+          </div>
+          <div>
+            <div class="pc-score-doc">Employment Agreement</div>
+            <div class="pc-score-sub">8 CLAUSES ANALYZED</div>
+          </div>
+        </div>
+        <div class="pc-items">
+          <div class="pc-item h"><div class="pcd"></div>Non-compete spans 3 years</div>
+          <div class="pc-item h"><div class="pcd"></div>Unilateral salary reduction</div>
+          <div class="pc-item m"><div class="pcd"></div>2-week termination notice</div>
+          <div class="pc-item l"><div class="pcd"></div>Standard IP assignment</div>
+        </div>
+        <div class="pc-footer">✓ on-chain · tx: 0x4f2a...c881</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 1 -->
+  <div class="panel p1">
+    <div class="p1-nav">
+      <button class="p1-back" onclick="goTo(0)">← back</button>
+      <div class="p1-nav-title">Select document type and input</div>
+    </div>
+    <div class="p1-body">
+      <div class="p1-col">
+        <div class="col-label">Document type</div>
+        <div class="type-grid">
+          <button class="type-btn on" onclick="selType(this,'Employment')">
+            <span class="type-icon">💼</span>
+            <span class="type-name">Employment</span>
+            <span class="type-desc">Work contracts, offer letters</span>
+          </button>
+          <button class="type-btn" onclick="selType(this,'NDA')">
+            <span class="type-icon">🔒</span>
+            <span class="type-name">NDA</span>
+            <span class="type-desc">Confidentiality agreements</span>
+          </button>
+          <button class="type-btn" onclick="selType(this,'Lease')">
+            <span class="type-icon">🏠</span>
+            <span class="type-name">Lease</span>
+            <span class="type-desc">Property rental agreements</span>
+          </button>
+          <button class="type-btn" onclick="selType(this,'Service')">
+            <span class="type-icon">⚙️</span>
+            <span class="type-name">Service</span>
+            <span class="type-desc">Vendor and contractor deals</span>
+          </button>
+        </div>
+        <button class="btn-analyze" id="btn-go" onclick="startAnalysis()">
+          <span>Scan document</span><span>→</span>
+        </button>
+      </div>
+      <div class="p1-col">
+        <div class="col-label">Document input</div>
+        <div class="input-toggle">
+          <button class="itog on" onclick="switchInput('text',this)">Paste text</button>
+          <button class="itog" onclick="switchInput('pdf',this)">Upload PDF</button>
+        </div>
+        <div class="ta-wrap vis">
+          <textarea id="doc-ta" placeholder="Paste the full contract text here...&#10;&#10;The AI will read every clause and identify risks."></textarea>
+        </div>
+        <div class="drop-area" id="dz">
+          <input type="file" id="pdf-input" accept=".pdf" onchange="onFile(this)">
+          <span class="drop-big">📑</span>
+          <div class="drop-t">Drop PDF here</div>
+          <div class="drop-s">or click · max 20MB</div>
+        </div>
+        <div class="file-tag" id="file-tag">
+          <span class="file-tag-name" id="ftname"></span>
+          <button class="file-tag-rm" onclick="rmFile()">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 2 -->
+  <div class="panel p2">
+    <div class="p2-nav">
+      <button class="p1-back" onclick="goTo(1)">← back</button>
+      <div class="p1-nav-title" id="p2-docname">Results</div>
+      <div class="p2-score-pill" id="p2-pill" style="display:none">
+        <span class="p2-score-lbl">RISK</span>
+        <span class="p2-score-val" id="p2-score-val">—</span>
+      </div>
+    </div>
+    <div class="p2-body">
+      <div class="p2-sidebar" id="p2-sidebar">
+        <div class="sidebar-label">Identified issues</div>
+        <div class="risk-list" id="risk-list"></div>
+        <div class="sidebar-label">Recommendations</div>
+        <div id="recs-list"></div>
+      </div>
+      <div class="p2-main" id="p2-main">
+        <div class="res-summary-block" id="rsb"></div>
+        <div class="detail-panel" id="detail-panel"></div>
+      </div>
+      <div class="scanning-overlay" id="scan-ov">
+        <div class="scan-big">⚖️</div>
+        <div class="scan-t">Scanning your document</div>
+        <div class="scan-s">OPENGRADIENT TEE · ANALYZING</div>
+        <div class="scan-steps">
+          <div class="scan-step" id="ss1"><div class="ssd"></div>Parsing structure</div>
+          <div class="scan-step" id="ss2"><div class="ssd"></div>Reading clauses</div>
+          <div class="scan-step" id="ss3"><div class="ssd"></div>Assessing risks</div>
+          <div class="scan-step" id="ss4"><div class="ssd"></div>Generating proof</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Canvas background ───────────────────────────────────────────────────────
+(()=>{
+  const c=document.getElementById('c'),ctx=c.getContext('2d');
+  let W,H,t=0;
+  const resize=()=>{W=c.width=innerWidth;H=c.height=innerHeight};
+  const blobs=[
+    {hue:280,x:.12,y:.2,rx:.5,ry:.4,vx:.00012,vy:.00008,a:.07},
+    {hue:320,x:.88,y:.75,rx:.45,ry:.38,vx:-.0001,vy:.00012,a:.055},
+    {hue:260,x:.5,y:.5,rx:.35,ry:.3,vx:.00008,vy:-.00015,a:.04},
+    {hue:300,x:.2,y:.8,rx:.3,ry:.25,vx:.00015,vy:-.0001,a:.045},
+  ];
+  const draw=()=>{
+    t++;
+    ctx.clearRect(0,0,W,H);
+    const bg=ctx.createRadialGradient(W*.5,H*.4,0,W*.5,H*.5,Math.max(W,H)*.9);
+    bg.addColorStop(0,'rgba(14,8,28,1)');
+    bg.addColorStop(.5,'rgba(10,6,18,1)');
+    bg.addColorStop(1,'rgba(5,3,10,1)');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    blobs.forEach(b=>{
+      const x=(b.x+Math.sin(t*b.vx*1000+b.hue)*0.08)*W;
+      const y=(b.y+Math.cos(t*b.vy*1000+b.hue)*0.06)*H;
+      const rx=b.rx*Math.min(W,H);
+      const ry=b.ry*Math.min(W,H);
+      ctx.save();
+      ctx.translate(x,y);
+      ctx.scale(1,ry/rx);
+      const g=ctx.createRadialGradient(0,0,0,0,0,rx);
+      g.addColorStop(0,`hsla(${b.hue},80%,60%,${b.a})`);
+      g.addColorStop(.4,`hsla(${b.hue+20},70%,50%,${b.a*.5})`);
+      g.addColorStop(1,`hsla(${b.hue+40},60%,40%,0)`);
+      ctx.beginPath();ctx.arc(0,0,rx,0,Math.PI*2);
+      ctx.fillStyle=g;ctx.fill();
+      ctx.restore();
+    });
+    ctx.strokeStyle='rgba(180,80,255,0.025)';
+    ctx.lineWidth=.5;
+    const step=80;
+    for(let x=0;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=0;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+    requestAnimationFrame(draw);
+  };
+  resize();draw();
+  window.addEventListener('resize',resize);
+})();
+
+// ─── API URL ─────────────────────────────────────────────────────────────────
+const API = 'http://127.0.0.1:5000';
+
+// ─── UI state ────────────────────────────────────────────────────────────────
+function goTo(i){document.getElementById('vp').className='vp s'+i}
+
+let inputMode='text',docType='Employment',pdfB64=null;
+
+function switchInput(m,el){
+  inputMode=m;
+  document.querySelectorAll('.itog').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelector('.ta-wrap').classList.toggle('vis',m==='text');
+  document.getElementById('dz').classList.toggle('vis',m==='pdf');
+}
+function selType(el,t){
+  document.querySelectorAll('.type-btn').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');docType=t;
+}
+function onFile(inp){
+  const f=inp.files[0];if(!f)return;
+  document.getElementById('ftname').textContent=f.name;
+  document.getElementById('file-tag').classList.add('vis');
+  const r=new FileReader();r.onload=e=>{pdfB64=e.target.result.split(',')[1]};r.readAsDataURL(f);
+}
+function rmFile(){
+  pdfB64=null;document.getElementById('pdf-input').value='';
+  document.getElementById('file-tag').classList.remove('vis');
+}
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('over');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type==='application/pdf'){document.getElementById('pdf-input').files=e.dataTransfer.files;onFile(document.getElementById('pdf-input'))}
+});
+
+// ─── Analysis ────────────────────────────────────────────────────────────────
+let analysisData=null;
+
+async function startAnalysis(){
+  let txt='',pdf=null;
+  if(inputMode==='text'){
+    txt=document.getElementById('doc-ta').value.trim();
+    if(!txt){alert('Paste document text first');return}
+  } else {
+    if(!pdfB64){alert('Upload a PDF first');return}
+    pdf=pdfB64;
+  }
+
+  const btn=document.getElementById('btn-go');
+  btn.disabled=true;btn.innerHTML='<span>Scanning...</span>';
+
+  goTo(2);
+
+  const ov=document.getElementById('scan-ov');
+  ov.classList.add('vis');
+  document.getElementById('rsb').innerHTML='';
+  document.getElementById('rsb').classList.remove('in');
+  document.getElementById('risk-list').innerHTML='';
+  document.getElementById('recs-list').innerHTML='';
+  document.getElementById('detail-panel').className='detail-panel';
+  document.getElementById('detail-panel').innerHTML='';
+  document.getElementById('p2-pill').style.display='none';
+
+  ['ss1','ss2','ss3','ss4'].forEach((id,i)=>{
+    document.getElementById(id).classList.remove('in');
+    setTimeout(()=>document.getElementById(id)?.classList.add('in'),i*700);
+  });
+
+  try{
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),90000);
+
+    const res=await fetch(API+'/analyze',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({doc_text:txt,pdf_base64:pdf,doc_type:docType}),
+      signal:controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if(!res.ok)throw new Error('Server error '+res.status);
+    const d=await res.json();
+    if(d.error)throw new Error(d.error);
+    analysisData=d;
+    renderResults(d);
+  }catch(e){
+    ov.classList.remove('vis');
+    const msg=e.name==='AbortError'
+      ?'Request timed out (90s). The server may be waking up — please try again.'
+      :`Scan failed: ${e.message}`;
+    document.getElementById('p2-main').innerHTML=`<div class="error-msg">${msg}<br><br><button onclick="goTo(1)" style="margin-top:8px;padding:8px 20px;border-radius:8px;background:var(--acc);color:#fff;border:none;cursor:pointer;font-family:Space Grotesk,sans-serif">← Try again</button></div>`;
+  }
+  btn.disabled=false;btn.innerHTML='<span>Scan document</span><span>→</span>';
+}
+
+function renderResults(d){
+  const score=d.risk_score||0;
+  const lvl=score>=70?'high':score>=40?'medium':'low';
+  const sc={high:'var(--danger)',medium:'var(--warn)',low:'var(--ok)'};
+  const hC=(d.risks||[]).filter(r=>r.level==='high').length;
+  const mC=(d.risks||[]).filter(r=>r.level==='medium').length;
+  const lC=(d.risks||[]).filter(r=>r.level==='low').length;
+
+  document.getElementById('p2-docname').textContent=(d.document_type||docType)+' Agreement';
+  const pill=document.getElementById('p2-pill');
+  pill.style.display='flex';
+  const sv=document.getElementById('p2-score-val');
+  sv.textContent=score;sv.style.color=sc[lvl];
+
+  const rsb=document.getElementById('rsb');
+  rsb.innerHTML=`
+    <div class="rsb-top">
+      <div>
+        <div class="rsb-title">${d.document_type||docType} Agreement</div>
+        <div class="rsb-meta">${d.clause_count||'—'} clauses · analyzed just now</div>
+      </div>
+      <div class="rsb-stats">
+        <div class="rsb-stat h"><div class="rsb-stat-n">${hC}</div><div class="rsb-stat-l">High</div></div>
+        <div class="rsb-stat m"><div class="rsb-stat-n">${mC}</div><div class="rsb-stat-l">Med</div></div>
+        <div class="rsb-stat l"><div class="rsb-stat-n">${lC}</div><div class="rsb-stat-l">Low</div></div>
+      </div>
+    </div>
+    <div class="rsb-text">${d.summary||''}</div>
+    ${d.proof?.transaction_hash?`<a class="proof-link" href="${d.proof.explorer_url}" target="_blank">✓ Verified on-chain · ${d.proof.transaction_hash.slice(0,10)}... ↗</a>`:''}
+  `;
+
+  const rl=document.getElementById('risk-list');
+  rl.innerHTML='';
+  (d.risks||[]).forEach((risk,i)=>{
+    const lv=risk.level||'medium';
+    const lb={high:'HIGH',medium:'MED',low:'LOW'};
+    const el=document.createElement('div');
+    el.className=`rl-item ${lv[0]}`;
+    el.innerHTML=`<div class="rl-dot"></div><div class="rl-title">${risk.title}</div><div class="rl-badge">${lb[lv]}</div>`;
+    el.onclick=()=>showDetail(i,el);
+    rl.appendChild(el);
+  });
+
+  const recEl=document.getElementById('recs-list');
+  recEl.innerHTML='';
+  (d.recommendations||[]).forEach((rec,i)=>{
+    const el=document.createElement('div');
+    el.style.cssText='font-size:.7rem;color:var(--text2);padding:.5rem 0;border-bottom:1px solid var(--border);line-height:1.55;display:flex;gap:.5rem;align-items:flex-start';
+    el.innerHTML=`<span style="font-family:Space Mono,monospace;font-size:.56rem;color:var(--text3);flex-shrink:0;margin-top:2px">${String(i+1).padStart(2,'0')}</span><span>${rec}</span>`;
+    recEl.appendChild(el);
+  });
+
+  document.getElementById('scan-ov').classList.remove('vis');
+
+  const dp=document.getElementById('detail-panel');
+  dp.className='detail-panel vis';
+  dp.innerHTML=`<div class="detail-empty"><div class="detail-empty-icon">←</div><div class="detail-empty-text">Select a risk from the list</div></div>`;
+
+  setTimeout(()=>rsb.classList.add('in'),50);
+  setTimeout(()=>dp.classList.add('in'),150);
+}
+
+function showDetail(idx,el){
+  const d=analysisData;if(!d?.risks?.[idx])return;
+  const risk=d.risks[idx];const lv=risk.level||'medium';
+  document.querySelectorAll('.rl-item').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  const dp=document.getElementById('detail-panel');
+  dp.classList.remove('in');
+  setTimeout(()=>{
+    dp.innerHTML=`
+      <div class="dp-badge ${lv}">● ${lv} risk</div>
+      <div class="dp-title">${risk.title}</div>
+      ${risk.clause?`<div class="dp-clause">${risk.clause}</div>`:''}
+      ${risk.quote?`<div class="dp-quote ${lv}">"${risk.quote}"</div>`:''}
+      <div class="dp-section"><div class="dp-section-label">What this means</div><div class="dp-section-text">${risk.explanation}</div></div>
+      ${risk.recommendation?`<div class="dp-rec"><span>→</span><span>${risk.recommendation}</span></div>`:''}
+    `;
+    dp.className='detail-panel vis';
+    setTimeout(()=>dp.classList.add('in'),30);
+    document.getElementById('p2-main').scrollTop=0;
+  },150);
+}
+</script>
+</body>
+</html>
