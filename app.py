@@ -161,8 +161,20 @@ def _parse_json(raw):
 
 def call_llm(messages, retries=2):
     global WORKING_MODEL
+
+    # Ждём инициализации OG (макс 120 сек)
+    deadline = time.time() + 120
+    while not _ready and time.time() < deadline:
+        time.sleep(1)
+
     if not OG_OK or llm_client is None:
         return {"error": "OpenGradient not available"}
+
+    # Ждём выбора модели (макс 60 сек)
+    deadline = time.time() + 60
+    while WORKING_MODEL is None and time.time() < deadline:
+        time.sleep(2)
+
     if WORKING_MODEL is None:
         return {"error": "No working LLM model found — OG testnet may be down"}
 
